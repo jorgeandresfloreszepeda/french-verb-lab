@@ -3,10 +3,85 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>French Verb Lab</title>
+    <title>Labo des Verbes</title>
     <link rel="stylesheet" href="css/style.css" />
   </head>
   <body>
+    <header>
+      <h1>Labo des Verbes</h1>
+      <p>Pratiquez la conjugaison des verbes français</p>
+    </header>
+
+    <main>
+      <!-- ── Section sélection ──────────────────────────────────────── -->
+      <section id="section-selection" aria-labelledby="heading-selection">
+        <h2 id="heading-selection">Choisissez un exercice</h2>
+
+        <div class="field-group">
+          <label for="select-verb">Verbe :</label>
+          <select id="select-verb" aria-label="Choisissez un verbe">
+            <option value="">— choisissez un verbe —</option>
+            <!-- populated by ui.js -->
+          </select>
+        </div>
+
+        <div class="field-group">
+          <label for="select-tense">Temps :</label>
+          <select id="select-tense" aria-label="Choisissez un temps verbal">
+            <option value="">— choisissez un temps —</option>
+            <!-- populated by ui.js -->
+          </select>
+        </div>
+
+        <button id="btn-start" type="button">Commencer</button>
+
+        <p id="error-selection" role="alert" hidden></p>
+      </section>
+
+      <!-- ── Section exercice ───────────────────────────────────────── -->
+      <section id="section-exercise" aria-labelledby="heading-exercise" hidden>
+        <h2 id="heading-exercise">Conjuguez le verbe</h2>
+
+        <p id="exercise-prompt" aria-live="polite"></p>
+
+        <div class="field-group">
+          <label for="answer-input">Votre réponse :</label>
+          <input
+            type="text"
+            id="answer-input"
+            aria-label="Entrez la forme conjuguée"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="none"
+            spellcheck="false"
+          />
+        </div>
+
+        <button id="btn-submit" type="button">Vérifier</button>
+      </section>
+
+      <!-- ── Section rétroaction ────────────────────────────────────── -->
+      <section id="section-feedback" aria-labelledby="heading-feedback" hidden>
+        <h2 id="heading-feedback" class="sr-only">Résultat</h2>
+
+        <span id="feedback-icon" role="img" aria-label=""></span>
+
+        <p id="feedback-message"></p>
+
+        <p id="feedback-expected"></p>
+
+        <button id="btn-continue" type="button">Continuer</button>
+      </section>
+
+      <!-- ── Marqueur de score ──────────────────────────────────────── -->
+      <div role="status" aria-live="polite" id="score-display">
+        <span id="score-text">0 correctes / 0 tentatives</span>
+        <button id="btn-reset" type="button" aria-label="Réinitialiser le score">
+          Réinitialiser
+        </button>
+      </div>
+    </main>
+
     <script type="module" src="js/ui.js"></script>
   </body>
 </html>
