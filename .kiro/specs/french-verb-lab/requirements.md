@@ -131,7 +131,7 @@
 #### Criterios de aceptación
 
 1. THE **App** SHALL estar compuesta exclusivamente por archivos estáticos (`index.html`, CSS, JavaScript) que puedan abrirse y desplegarse directamente en un navegador o servidor de archivos sin requerir ningún proceso de compilación ni transpilación.
-2. THE **App** SHALL poder desplegarse en un bucket de S3 con _static website hosting_ habilitado; WHEN CloudFront recibe una solicitud a una ruta no encontrada, THE **App** SHALL redirigir al `index.html` mediante la configuración de error de CloudFront.
+2. THE **App** SHALL poder desplegarse en un bucket de S3 con _static website hosting_ habilitado y `index.html` como documento raíz por defecto, sin requerir configuración adicional de redirección de errores en CloudFront.
 3. WHEN la aplicación se carga desde el origen S3/CloudFront, THE **App** SHALL completar la carga sin errores en la consola del navegador, con todos los recursos estáticos devolviendo HTTP 200 y la página siendo interactiva en menos de 5 segundos en una conexión de 10 Mbps.
 4. IF el código fuente de la aplicación contiene credenciales de AWS, claves de API o secretos, THEN THE **App** SHALL ser rechazada en revisión de código y no desplegada.
 

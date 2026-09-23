@@ -55,7 +55,8 @@ sequenceDiagram
     U->>UI: Introduce respuesta, pulsa Enviar / Enter
     UI->>E: checkAnswer(exercise, rawInput)
     E-->>UI: Result {resultado, esperado?}
-    UI->>S: updateScore(result)
+    UI->>UI: computes new score (correct++, total++)
+    UI->>S: saveScore(newScore)
     S->>LS: setItem("fvl_score", ...)
     UI->>U: Muestra retroalimentación (1 500 ms o botón)
     UI->>E: nextExercise(...)
@@ -103,11 +104,9 @@ Toda la lógica de negocio sin estado global: recibe datos como parámetros y de
  */
 
 // Interfaz pública
-export function createCycleState()
-// () => CycleState  — estado inicial de ciclo vacío
-
-export function nextExercise(verb, tense, cycleState)
-// (string, string, CycleState) => { exercise: Exercise, nextState: CycleState }
+export function nextExercise(verb, tense, cycleState, rng = Math.random)
+// (string, string, CycleState | null, function?) => { exercise: Exercise, nextState: CycleState }
+// Si cycleState es null, inicializa un estado vacío internamente.
 // Selecciona aleatoriamente un pronombre no usado; al completar ciclo, reinicia
 // evitando que el primer pronombre del nuevo ciclo coincida con el último del anterior.
 
@@ -117,7 +116,7 @@ export function checkAnswer(exercise, rawInput)
 // Preserva acentos; entrada vacía/solo-espacios devuelve resultado:'incorrecto'.
 ```
 
-`engine.js` no usa `Math.random` directamente; recibe un parámetro opcional `rng` (por defecto `Math.random`) para facilitar pruebas deterministas.
+`engine.js` recibe `rng` como parámetro opcional (por defecto `Math.random`) para facilitar pruebas deterministas. `nextExercise` acepta `null` como estado inicial, eliminando la necesidad de una función `createCycleState` pública separada.
 
 ### `storage.js`
 
@@ -221,11 +220,13 @@ Clave: `"fvl_score"`. El objeto se serializa con `JSON.stringify` y se deseriali
     <section>       — panel de selección (selectores + botón iniciar)
     <section>       — panel de ejercicio (enunciado + input + botón enviar)
     <section>       — panel de retroalimentación (icono + mensaje + botón continuar)
-    <aside>         — marcador "X correctas / Y intentos" + botón reinicio
+    <div role="status" aria-live="polite">
+                    — marcador "X correctas / Y intentos" + botón reinicio
   </main>
-  <footer>          — créditos / info
 </body>
 ```
+
+> Se usa `<div role="status" aria-live="polite">` en lugar de `<aside>` porque el marcador es parte central del flujo de práctica, no contenido tangencial. Se omite el `<footer>` porque ningún requisito lo cubre.
 
 ---
 
@@ -337,60 +338,52 @@ Si el estudiante confirma el inicio sin haber seleccionado verbo, tiempo o ambos
 
 ## Testing Strategy
 
-### Enfoque dual: ejemplos + propiedades
+### Enfoque: tests de ejemplo
 
-La lógica de `engine.js` y `storage.js` es pura o casi-pura, lo que las hace ideales para property-based testing. La UI (`ui.js`) se prueba con tests de ejemplo usando JSDOM.
-
-### Biblioteca de property-based testing
-
-Se usará **[fast-check](https://fast-check.dev/)** (MIT, ampliamente mantenida, compatible con ESM y Node.js 18+). Es la única dependencia de desarrollo del proyecto; no se incluye en el bundle de producción.
-
-> *Justificación*: fast-check es la librería PBT más madura del ecosistema JavaScript, con soporte nativo para ESM, generadores arbitrarios personalizables y reproducibilidad mediante semillas. No hay alternativa equivalente sin dependencias externas.
-
-### Tests de propiedades (`engine.js`, `storage.js`)
-
-Cada test de propiedad se ejecuta con un mínimo de **100 iteraciones**. Cada test incluye un comentario de trazabilidad:
-
-```js
-// Feature: french-verb-lab, Propiedad 4: Normalización no penaliza espaciado ni capitalización
-```
-
-| Propiedad | Módulo | Generadores necesarios |
-|---|---|---|
-| P1: Completitud del catálogo | `data.js` | Iteración sobre VERBS (no PBT, es verificación estructural) |
-| P2: Sin repetición en ciclo | `engine.js` | `fc.constantFrom(...VERB_LIST)`, `fc.constantFrom(...TENSE_LIST)`, `fc.integer` como semilla |
-| P3: Anti-colisión entre ciclos | `engine.js` | Mismo que P2 |
-| P4: Normalización espaciado/capitalización | `engine.js` | `fc.constantFrom(...formasCanónicas)`, `fc.string` para padding, `fc.boolean` para uppercase |
-| P5: Acentos obligatorios | `engine.js` | `fc.constantFrom(...formasConAcento)`, transformador que elimina diacríticos |
-| P6: Respuesta incorrecta devuelve canónica | `engine.js` | `fc.string()` filtrado para excluir formas correctas |
-| P7: Vacío/espacios siempre incorrecto | `engine.js` | `fc.stringOf(fc.constant(' '))` |
-| P8: Round-trip puntuación | `storage.js` | `fc.nat()` para correct, `fc.nat()` para total (con filtro M ≥ N) |
-| P9: Reinicio borra puntuación | `storage.js` | `fc.nat()` para correct y total |
-
-### Tests de ejemplo (`ui.js`, accesibilidad, integración)
-
-- **Inicialización de selectores**: verificar que los `<select>` contienen 12 verbos y 4 tiempos.
-- **Envío con Enter**: simular `keydown` con `key: 'Enter'` y verificar que se llama `submitAnswer`.
-- **Campo vacío**: intentar enviar con input vacío y verificar que no se procesa.
-- **Retroalimentación correcta**: verificar DOM + aria-label + actualización del contador.
-- **Retroalimentación incorrecta**: verificar que DOM contiene el esperado y la respuesta del estudiante.
-- **Auto-avance en 1500ms**: usar fake timers de vitest para verificar `scheduleNext`.
-- **Confirmación de reinicio**: simular clic en botón de reinicio y verificar diálogo.
-- **localStorage vacío → score 0/0**: llamar `loadScore()` sin datos previos.
+Los datos de conjugación son finitos y enumerables (12 verbos × 4 tiempos × 6 pronombres). La lógica de validación es `trim().toLowerCase()` más una comparación exacta. No hay espacio de entrada ilimitado que justifique property-based testing; los tests de ejemplo son más legibles y cubren los mismos casos con cero dependencias adicionales.
 
 ### Runner de tests
 
-Se usará **[Vitest](https://vitest.dev/)** (MIT, compatible con ES modules nativos, sin configuración de transpilación). Comando para CI: `vitest --run`.
+Se usará **[Vitest](https://vitest.dev/)** (MIT, compatible con ES modules nativos, sin configuración de transpilación). Única dependencia de desarrollo del proyecto. Comando: `vitest --run`.
 
 > *Justificación*: Jest requiere transformación para ESM; Vitest soporta ES modules nativos sin configuración adicional, alineándose con la restricción de "sin transpilación" del proyecto.
+
+### Tests de `engine.js` (comportamientos especificados en Correctness Properties)
+
+Cada grupo de tests incluye un comentario de trazabilidad con la propiedad que verifica:
+
+| Comportamiento | Casos de ejemplo a cubrir |
+|---|---|
+| P1: Completitud del catálogo | Iterar `VERBS` y verificar que cada combinación tiene exactamente 6 claves |
+| P2: Sin repetición en ciclo | Llamar `nextExercise` 6 veces; verificar que los 6 pronombres son distintos |
+| P3: Anti-colisión entre ciclos | Completar un ciclo; verificar que el primer pronombre del nuevo ciclo ≠ último del anterior |
+| P4: Normalización | `"  SUIS "` → correcto; `"suis"` → correcto |
+| P5: Acentos obligatorios | `"etes"` para _êtes_ → incorrecto; `"êtes"` → correcto |
+| P6: Forma canónica en respuesta incorrecta | Verificar que `esperado` es igual byte a byte a la forma en `VERBS` |
+| P7: Vacío/espacios → incorrecto | `""`, `"   "` → incorrecto con `esperado` poblado |
+
+### Tests de `storage.js`
+
+- `loadScore()` sin datos previos → `{ correct: 0, total: 0 }`
+- `saveScore({ correct: 3, total: 5 })` seguido de `loadScore()` → mismos valores
+- `resetScore()` seguido de `loadScore()` → `{ correct: 0, total: 0 }`
+
+### Tests de `ui.js` (con JSDOM)
+
+- Inicialización de selectores: los `<select>` contienen 12 verbos y 4 tiempos.
+- Envío con Enter: simular `keydown` con `key: 'Enter'`; verificar que se procesa igual que el botón.
+- Campo vacío: intentar enviar sin texto; verificar que no se actualiza el marcador.
+- Retroalimentación correcta: verificar mensaje + actualización del contador.
+- Retroalimentación incorrecta: verificar que el DOM muestra `esperado` y la respuesta del estudiante.
+- Auto-avance en 1 500 ms: usar fake timers de Vitest.
+- Confirmación de reinicio: simular clic en botón de reinicio; verificar diálogo antes de acción.
 
 ### Cobertura mínima esperada
 
 | Módulo | Estrategia |
 |---|---|
-| `data.js` | Verificación estructural (ejemplo) + smoke importación Node.js |
-| `engine.js` | Property-based testing (P2–P7) + ejemplos de ciclo |
-| `storage.js` | Property-based testing (P8, P9) + edge case localStorage vacío |
+| `data.js` | Verificación estructural de `VERBS` + smoke de importación en Node.js |
+| `engine.js` | Tests de ejemplo (P1–P7) |
+| `storage.js` | Tests de ejemplo (round-trip, reset, vacío) |
 | `ui.js` | Tests de ejemplo con JSDOM |
-| Accesibilidad | Verificación manual + axe-core en CI (opcional) |
-| Despliegue | Verificaciones manuales y de linting |
+| Accesibilidad | Verificación manual contra checklist WCAG 2.1 AA |
