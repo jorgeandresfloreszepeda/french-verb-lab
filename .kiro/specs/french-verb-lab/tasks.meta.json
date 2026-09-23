@@ -1,0 +1,80 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "2. Implement `data.js` — conjugation catalogue — Export `VERB_LIST` (12 infinitives: être, avoir, aller, faire, parler, finir, prendre, venir, pouvoir, vouloir, devoir, savoir), `TENSE_LIST` ([\"présent\", \"passé composé\", \"imparfait\", \"futur simple\"]), and `VERBS` (all 12 × 4 × 6 conjugation forms, each form verified against a reference). Add an integrity check at module load time that throws a descriptive `Error` if any pronoun key is missing for any (verb, tense) pair: `\"data.js: missing form for '${verb}' / '${tense}': missing '${pronoun}'\"`. **Validates:** Requirements 1.1, 1.2, 1.3, 1.4": [
+      {
+        "executionId": "606679ef-b6a8-47e9-90de-d66023e88edb",
+        "chatSessionId": "sess_e3eeb9df-ff55-4aca-8b8a-446df279b023",
+        "timestamp": 1790126162684
+      }
+    ],
+    "3. Implement `engine.js` — exercise logic and answer validation — Export `nextExercise(verb, tense, cycleState, rng = Math.random)`: accept `null` as initial state (initialise `{ used: [], lastPronoun: null }` internally); pick a random unused pronoun; when all 6 have been used reset `used` to `[]` keeping `lastPronoun` and exclude `lastPronoun` from the next candidate pool; return `{ exercise: { verb, tense, pronoun }, nextState }`. Export `checkAnswer(exercise, rawInput)`: return `{ resultado: \"incorrecto\", esperado }` immediately if `rawInput.trim() === \"\"`; otherwise normalise via `trim().toLowerCase()`, compare against canonical form, return `{ resultado: \"correcto\" }` on match or `{ resultado: \"incorrecto\", esperado }` on mismatch, preserving accents in `esperado`. Export only these two functions. **Validates:** Requirements 2.2, 2.3, 4.1, 4.2, 4.3, 4.4, 4.5, 9.1, 9.2, 9.3, 9.4, 9.5": [
+      {
+        "executionId": "606679ef-b6a8-47e9-90de-d66023e88edb",
+        "chatSessionId": "sess_e3eeb9df-ff55-4aca-8b8a-446df279b023",
+        "timestamp": 1790126163131
+      }
+    ],
+    "4. Implement `storage.js` — localStorage encapsulation — Define private `SCORE_KEY = \"fvl_score\"`. Export `loadScore()` (parse from localStorage, return `{ correct: 0, total: 0 }` if absent or JSON-invalid, wrap in try/catch with console.warn). Export `saveScore(score)` (stringify to localStorage, try/catch with console.warn). Export `resetScore()` (calls `saveScore({ correct: 0, total: 0 })`). Do not export `SCORE_KEY`. **Validates:** Requirements 6.2, 6.3, 6.4, 6.5, 6.7": [
+      {
+        "executionId": "606679ef-b6a8-47e9-90de-d66023e88edb",
+        "chatSessionId": "sess_e3eeb9df-ff55-4aca-8b8a-446df279b023",
+        "timestamp": 1790126163429
+      }
+    ],
+    "5. Build `index.html` — semantic structure — Add `<header>` with French app title `<h1>`. Add single `<main>` with three `<section>` elements: `#section-selection` (two `<label>`+`<select>` pairs with French labels and empty default `<option>`, a French `<button>` to start, `<p id=\"error-selection\">` initially hidden); `#section-exercise` (initially hidden: enunciado `<p>`, `<input type=\"text\">` with `<label>` and French `aria-label`, French submit `<button>`); `#section-feedback` (initially hidden: icon element with `aria-label`, feedback `<p>`, expected-form `<p>`, French continue `<button>`). Add `<div role=\"status\" aria-live=\"polite\" id=\"score-display\">` inside `<main>` with score text and French reset `<button>`. Verify every interactive control has a visible French label or `aria-label`. Verify tab order flows top-to-bottom, left-to-right. **Validates:** Requirements 3.1, 3.2, 3.3, 6.1, 7.1, 7.2, 7.3, 7.5": [
+      {
+        "executionId": "606679ef-b6a8-47e9-90de-d66023e88edb",
+        "chatSessionId": "sess_e3eeb9df-ff55-4aca-8b8a-446df279b023",
+        "timestamp": 1790126163693
+      }
+    ],
+    "6. Implement `ui.js` — DOM wiring and event handling — On `DOMContentLoaded`: call `initSelectors()`, `updateScoreDisplay()`, show `#section-selection`, hide others. `initSelectors()`: populate verb and tense `<select>` from `VERB_LIST` / `TENSE_LIST` after the blank default option. `startSession()`: validate selection; on error show `#error-selection` with French message; on success hide selection panel, show exercise panel, set focus on input, call `nextExercise(verb, tense, null)` and store returned state. `renderExercise(exercise)`: update enunciado, label, and aria-label; clear input value. `submitAnswer()`: return early (keep focus) if input empty; call `checkAnswer`; compute new score; call `saveScore(newScore)` and `updateScoreDisplay()`; call `showFeedback(result)`. `showFeedback(result)`: hide exercise panel, show feedback panel; set icon aria-label in French; toggle `.feedback--correct` / `.feedback--incorrect` class; call `scheduleNext()`. `scheduleNext()`: set 1500 ms timeout calling `loadNextExercise()`; wire continue button to call `loadNextExercise()` and cancel the timeout. `loadNextExercise()`: advance state via `nextExercise`; call `renderExercise`; hide feedback, show exercise, set focus. `updateScoreDisplay()`: set `#score-display` text to `\"${correct} correctes / ${total} tentatives\"`. Reset button: show native `confirm()` with French message; if confirmed call `resetScore()` and `updateScoreDisplay()`. Keyboard: `keydown` Enter on input calls `submitAnswer()`. Guard: if `resultado` is neither `\"correcto\"` nor `\"incorrecto\"`, log `console.error` and return. **Validates:** Requirements 2.1, 2.4, 3.3, 3.4, 3.5, 5.1, 5.2, 5.3, 5.4, 5.5, 6.1, 6.6, 6.7": [
+      {
+        "executionId": "606679ef-b6a8-47e9-90de-d66023e88edb",
+        "chatSessionId": "sess_e3eeb9df-ff55-4aca-8b8a-446df279b023",
+        "timestamp": 1790126164037
+      }
+    ],
+    "7. Write CSS — responsive layout and WCAG AA styles — Define CSS custom properties `--color-correct`, `--color-incorrect`, `--color-bg`, `--color-text`. Single-column centred layout with `max-width` and padding (no fixed widths). Fluid from 320 px to 1 440 px with no horizontal overflow or truncated text. Normal text contrast ≥ 4.5:1, large text ≥ 3:1 (verify with a contrast checker). Focus indicators contrast ≥ 3:1 (do not remove outline without equivalent). Style `#section-selection`, `#section-exercise`, `#section-feedback`, and `#score-display` as visually distinct panels. Apply `.feedback--correct` and `.feedback--incorrect` classes (toggled by `ui.js`) using the custom properties. **Validates:** Requirements 5.4, 7.3, 7.4, 7.6": [
+      {
+        "executionId": "606679ef-b6a8-47e9-90de-d66023e88edb",
+        "chatSessionId": "sess_e3eeb9df-ff55-4aca-8b8a-446df279b023",
+        "timestamp": 1790126164322
+      }
+    ],
+    "8. Write tests — `data.test.js`: assert `VERB_LIST.length === 12`, `TENSE_LIST.length === 4`, and that every (verb, tense) pair in `VERBS` has exactly 6 pronoun keys. `engine.test.js`: (P2) call `nextExercise` 6 times from null state with a seeded rng stub and assert all 6 pronouns are distinct; (P3) complete a cycle and assert first pronoun of next cycle ≠ last of previous; (P4) assert `checkAnswer` returns `correcto` for `\"  SUIS \"` on être/présent/je; (P5) assert `\"etes\"` → incorrecto and `\"êtes\"` → correcto on être/présent/vous; (P6) assert `esperado` in incorrect result equals canonical form byte-for-byte; (P7) assert `\"\"` and `\"   \"` both return incorrecto with `esperado` populated. `storage.test.js`: mock localStorage with a Map-backed stub; assert `loadScore()` returns `{correct:0,total:0}` when empty; assert save+load round-trip; assert reset+load returns zeros. `ui.test.js` (jsdom environment): assert verb select has 13 options and tense select has 5 options after init; simulate Enter keydown on input and assert submitAnswer logic runs. Run `vitest --run` and fix all failures before marking done. **Validates:** Requirements 9.1, 9.2, 9.3, 9.4, 9.5; Design Properties P1–P9": [
+      {
+        "executionId": "606679ef-b6a8-47e9-90de-d66023e88edb",
+        "chatSessionId": "sess_e3eeb9df-ff55-4aca-8b8a-446df279b023",
+        "timestamp": 1790126164680
+      }
+    ],
+    "9. Accessibility manual verification — Navigate the entire app by keyboard (Tab, Shift+Tab, Enter, Space) and verify all interactive elements are reachable with visible focus. Verify all user-visible text is in French. Check colour contrast for text and focus indicators with browser devtools or WebAIM Contrast Checker. Verify layout at 320 px width shows no horizontal scrollbar and no truncated text. **Validates:** Requirements 7.1, 7.2, 7.3, 7.4, 7.5, 7.6": [
+      {
+        "executionId": "606679ef-b6a8-47e9-90de-d66023e88edb",
+        "chatSessionId": "sess_e3eeb9df-ff55-4aca-8b8a-446df279b023",
+        "timestamp": 1790126164961
+      }
+    ],
+    "10. Static deployment preparation — Verify the app loads correctly opened as `file:///` (no server). Create `DEPLOY.md` documenting: create S3 bucket, enable static website hosting, set `index.html` as default root document, upload all files, optionally front with CloudFront. Confirm no AWS credentials, API keys, or secrets appear anywhere in source files. Confirm the app is fully interactive in under 5 seconds on a simulated slow connection (browser Network throttle Fast 3G or equivalent). **Validates:** Requirements 8.1, 8.2, 8.3, 8.4": [
+      {
+        "executionId": "606679ef-b6a8-47e9-90de-d66023e88edb",
+        "chatSessionId": "sess_e3eeb9df-ff55-4aca-8b8a-446df279b023",
+        "timestamp": 1790126165365
+      }
+    ],
+    "1. Scaffold project structure — Create `index.html` (HTML5 boilerplate, charset UTF-8, viewport meta, link to `css/style.css`, `<script type=\"module\" src=\"js/ui.js\">`), `css/style.css` (empty), `js/data.js` / `js/engine.js` / `js/storage.js` / `js/ui.js` (empty ES module stubs with identifying comments), `package.json` (`\"type\": \"module\"`, `\"test\": \"vitest --run\"`, vitest as only devDependency), and `tests/` directory with empty `data.test.js`, `engine.test.js`, `storage.test.js`, `ui.test.js`. **Validates:** Requirements 8.1, 9.1, 9.2": [
+      {
+        "executionId": "606679ef-b6a8-47e9-90de-d66023e88edb",
+        "chatSessionId": "sess_e3eeb9df-ff55-4aca-8b8a-446df279b023",
+        "timestamp": 1790126173695
+      },
+      {
+        "executionId": "606679ef-b6a8-47e9-90de-d66023e88edb",
+        "chatSessionId": "sess_e3eeb9df-ff55-4aca-8b8a-446df279b023",
+        "timestamp": 1790126402978
+      }
+    ]
+  }
+}
