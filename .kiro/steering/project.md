@@ -9,67 +9,58 @@ This project is an educational French verb conjugation practice website.
 Use:
 - HTML5
 - CSS3
-- vanilla JavaScript
+- vanilla JavaScript (ES modules, no transpilation)
 
-Avoid frameworks unless explicitly requested.
+Avoid libraries and frameworks unless explicitly requested. If a dependency is added, explain why it is necessary.
 
 ## Architecture
 
 Keep:
 - conjugation data separate from UI;
 - application logic separate from DOM rendering;
-- persistence isolated behind a small storage abstraction.
+- `localStorage` access confined to a single module.
+
+Suggested file layout:
+```
+index.html
+css/style.css
+js/data.js      # verb and conjugation data
+js/engine.js    # exercise logic and answer validation
+js/storage.js   # localStorage read/write
+js/ui.js        # DOM rendering and event handling
+```
 
 ## AWS
 
-The first version must be deployable as a static website.
-
-Do not introduce:
-- EC2
-- Lambda
-- API Gateway
-- RDS
-- DynamoDB
-- Cognito
-
-unless a requirement explicitly justifies the service.
+Deploy as a static website (S3 + CloudFront or equivalent). Do not introduce backend services (compute, databases, auth) unless a requirement explicitly justifies them.
 
 ## Quality
 
-Prefer:
-- small functions;
-- descriptive names;
-- comments only where they add value;
-- deterministic behavior;
-- accessible HTML;
-- responsive CSS.
+- Functions should fit in roughly 20 lines or fewer; extract helpers when they grow larger.
+- Use descriptive names; add comments only to explain non-obvious decisions, not to restate the code.
+- Prefer deterministic behavior.
+- Write accessible HTML: use semantic elements, `<label>` for inputs, and French text for all user-visible content including `aria-label` and `alt` attributes.
+- Use responsive CSS.
+
+## Input validation
+
+When checking a user's answer:
+- trim leading and trailing whitespace;
+- compare case-insensitively;
+- do not strip accents — `é`, `è`, and `ê` are distinct and must be preserved.
 
 ## Security
 
-Never create or commit:
-- credentials;
-- access keys;
-- API keys;
-- passwords;
-- secrets.
-
-Never recommend putting AWS credentials in browser JavaScript.
+Never create or commit credentials, access keys, API keys, passwords, or secrets. Never put AWS credentials in browser JavaScript.
 
 ## Testing
 
-Conjugation logic must be testable without requiring a browser DOM.
+Conjugation logic must be testable without a browser DOM. Keep `engine.js` free of DOM dependencies so it can be imported directly by a test runner.
 
 ## Language
 
-User-facing content should be in French.
-
-Code identifiers and technical documentation should be in English unless there is a strong reason otherwise.
+User-facing content (labels, instructions, feedback, `aria-label`, `alt` text) should be in French. Code identifiers and technical documentation should be in English.
 
 ## Agent behavior
 
-Before making large architectural changes:
-- explain the reason;
-- identify the files affected;
-- keep the solution consistent with the current architecture.
-
-Do not add dependencies without explaining why they are necessary.
+Before making changes that affect more than one file or alter the module boundaries described above, explain the reason and list the files affected.
